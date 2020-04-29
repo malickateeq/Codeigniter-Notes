@@ -403,3 +403,5 @@ Before creating a controller and view for the above structure to work. Custom Ur
         redirect('users/login');
     }
 ```
+
+			$this->load->view('login_view');
