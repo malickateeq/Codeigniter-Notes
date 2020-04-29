@@ -403,5 +403,139 @@ Before creating a controller and view for the above structure to work. Custom Ur
         redirect('users/login');
     }
 ```
+## CodeIgniter Multiple Authentication Setup
+
+### 1. Database Setup:
+- users_table: (id, username, email, password, level) 
+// Above level 1=admin; 2=user; 3=employee; etc.
+
+### 2. Login Module:
+controller/Login.php, login_view.php, Model/Login_model
+
+```php
+
+- controller/Login.php
+class Login extends CI_Controller
+{
+	public function __construct()
+	{
+		parent::__construct();
+	}
+	public function index()
+	{
+		$this->load->view('login_view');
+	}
+	function auth()
+	{
+		$username = $this->input->post('username', TRUE);
+		$password = $this->input->post('password', TRUE);
+		$result = $this->Login_model->check_user($username, $password);
+
+		if($result->num_rows() > 0)
+		{
+			$data = $result->row_array();
+			$name = $data['username'];
+			$email = $data['email'];
+			$level = $data['level'];
+
+			// Set Session
+			$ses_data = array(
+				'username' => $username,
+				'email' => $email,
+				'level' => $level,
+				'logged_in' => TRUE
+			);
+			$this->session->set_userdata($ses_data);
+
+			// Redirect users to its destination according to its role
+			if($level === '1')
+			{
+				redirect('Admin');	// To Admin Controller's index
+
+			}
+			else if($level === '2')
+			{
+				redirect('User');
+			}
+			else if($level === '3')
+			{
+				redirect('Employee');
+			}
+			else
+			{
+				echo '<script> alert('Access denied!!'); history.go(-1); </script>'
+			}
 
 			$this->load->view('login_view');
+		}
+	}
+	function logout()
+	{
+		$this->session->sess_destroy();
+		redirect('Login');
+
+		// For logout redirect
+		// echo site_url('Login/logout');
+	}
+}
+
+-views/login_view.php
+
+<html>
+	<h1>Login Form</h1>
+	<form action="<?php echo site_url('Login/auth'); ?> method="POST">
+		inputs: username, password
+	</form>
+</html>
+
+
+-models/Login_model.php
+
+class Login extends CI_Model
+{
+	public function check_user($username, $password)
+	{
+		$this->db->select('*');
+		$this->db->select('users_table');
+		$this->db->where('username', $username);
+		$this->db->where('password', md5($password) );
+		$query = $this->db->get();
+		return $query;
+	}
+}
+```
+
+### 3. Create views (dashboards) for all roles
+- views / Admin.php, User.php, Employee.php
+
+### 4. Create controllers for all roles
+- controllers / Admin.php, User.php, Employee.php
+
+```php
+- controllers/Admin.php
+class Admin extends CI_Controller
+{
+	public function __construct()
+	{
+		parent::__construct();
+		// Only allow admins here
+		if($this->session->userdata('logged_in') !== TRUE)
+		{
+			redirect('Login');	// Show login view
+		}
+	}
+	public function index()
+	{
+		if($this->session->userdata('level') === '1')
+		{
+			$this->load->view('admin_view');
+		}
+		else
+		{
+			echo "Access Denied";
+		}
+	}
+}
+```
+			
+
