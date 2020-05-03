@@ -537,5 +537,163 @@ class Admin extends CI_Controller
 	}
 }
 ```
+
+## CI Database Queries
+```sql
+# $db object
+$db      = \Config\Database::connect();
+$builder = $db->table('users');
+```
+
+### Selecting Data
+```sql
+$builder = $db->table('mytable');
+$query   = $builder->get();  // Produces: SELECT * FROM mytable
+
+#The first and second parameters enable you to set a limit and offset clause:
+$query = $builder->get(10, 20);
+// Executes: SELECT * FROM mytable LIMIT 20, 10
+
+# Selecting attributes
+$builder = $db->select('title, content, date')->get();
+
+
+```
+### Showing Result Data 
+```sql
+foreach ($query->getResult() as $row)
+{
+	echo $row->title;
+}
+```
+### CI Query Builder Data
+```sql
+
+# Compiles the selection query just like $builder->get() but does not run the query. This method simply returns the SQL query as a string.
+$sql = $builder->getCompiledSelect();
+echo $sql;
+// Prints string: SELECT * FROM mytable
+
+echo $builder->select('title, content, date')->getCompiledSelect();
+// Prints string: SELECT title, content, date FROM mytable LIMIT 20, 10
+
+$query = $builder->getWhere(['id' => $id], $limit, $offset);
+
+$builder->select('title, content, date');
+$query = $builder->get();
+// Executes: SELECT title, content, date FROM mytable
+
+$builder->select('(SELECT SUM(payments.amount) FROM payments WHERE payments.invoice_id=4) AS amount_paid', FALSE);
+$query = $builder->get();
+
+$builder->selectMax('age');
+$query = $builder->get();  // Produces: SELECT MAX(age) as age FROM mytable
+$builder->selectMax('age', 'member_age');
+$query = $builder->get(); // Produces: SELECT MAX(age) as member_age FROM mytable
+
+$builder->selectMin('age');
+$query = $builder->get(); // Produces: SELECT MIN(age) as age FROM mytable
+
+$builder->selectAvg('age');
+$query = $builder->get(); // Produces: SELECT AVG(age) as age FROM mytable
+
+$builder->selectSum('age');
+$query = $builder->get(); // Produces: SELECT SUM(age) as age FROM mytable
+
+#This method is particularly helpful when used with groupBy(). For counting results generally see countAll() or countAllResults().
+$builder->selectCount('age');
+$query = $builder->get(); // Produces: SELECT COUNT(age) as age FROM mytable
+
+$builder->select('title, content, date');
+$builder->from('mytable');
+$query = $builder->get();  // Produces: SELECT title, content, date FROM mytable
+
+$builder->db->table('blog');
+$builder->select('*');
+$builder->join('comments', 'comments.id = blogs.id');
+$query = $builder->get();
+// Produces:
+// SELECT * FROM blogs JOIN comments ON comments.id = blogs.id
+
+#Looking for Specific Data
+$builder->where('name', $name);
+$builder->where('title', $title);
+$builder->where('status', $status);
+// WHERE name = 'Joe' AND title = 'boss' AND status = 'active'
+
+$builder->where('name !=', $name);
+$builder->where('id <', $id); // Produces: WHERE name != 'Joe' AND id < 45
+
+$array = ['name' => $name, 'title' => $title, 'status' => $status];
+$builder->where($array);
+// Produces: WHERE name = 'Joe' AND title = 'boss' AND status = 'active'
+
+$array = ['name !=' => $name, 'id <' => $id, 'date >' => $date];
+$builder->where($array);
+
+$where = "name='Joe' AND status='boss' OR status='active'";
+$builder->where($where);
+
+$builder->where('name !=', $name);
+$builder->orWhere('id >', $id);  // Produces: WHERE name != 'Joe' OR id > 50
+
+$names = ['Frank', 'Todd', 'James'];
+$builder->whereIn('username', $names);
+// Produces: WHERE username IN ('Frank', 'Todd', 'James')
+
+$builder->whereIn('id', function(BaseBuilder $builder) {
+    return $builder->select('job_id')->from('users_jobs')->where('user_id', 3);
+});
+// Produces: WHERE "id" IN (SELECT "job_id" FROM "users_jobs" WHERE "user_id" = 3)
+
+$builder->like('title', 'match', 'before'); // Produces: WHERE `title` LIKE '%match' ESCAPE '!'
+$builder->like('title', 'match', 'after');  // Produces: WHERE `title` LIKE 'match%' ESCAPE '!'
+$builder->like('title', 'match', 'both');   // Produces: WHERE `title` LIKE '%match%' ESCAPE '!'
+
+$builder->groupBy("title"); // Produces: GROUP BY title
+
+$builder->distinct();
+$builder->get(); // Produces: SELECT DISTINCT * FROM mytable
+
+$builder->orderBy('title', 'DESC');
+// Produces: ORDER BY `title` DESC
+
+$builder->orderBy('title', 'DESC');
+$builder->orderBy('name', 'ASC');
+// Produces: ORDER BY `title` DESC, `name` ASC
+
+$builder->orderBy('title', 'RANDOM');
+// Produces: ORDER BY RAND()
+
+$builder->limit(10);  // Produces: LIMIT 10
+
+echo $builder->countAllResults();  // Produces an integer, like 25
+$builder->like('title', 'match');
+$builder->from('my_table');
+echo $builder->countAllResults(); // Produces an integer, like 17
+
+echo $builder->countAll();  // Produces an integer, like 25
+
+https://codeigniter.com/user_guide/database/query_builder.html
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 			
 
